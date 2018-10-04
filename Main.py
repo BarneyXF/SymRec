@@ -7,10 +7,10 @@ ImageParts = {}
 
 def Main():
 	#image = Image.open("C:/Users/valer/Desktop/a.jpg", "r")
-	image = Image.open( "C:/Users/valer/Desktop/HabrCaptcha.jpg", "r" )
+	image = Image.open( "C:/Users/valer/Desktop/HabraCaptcha.jpg", "r" )
 
-	height = 100
-	width = 100
+	#height = 100
+	#width = 100
 
 	#for x in range(0, image.size[0], width):
 	#	for y in range(0, image.size[1], height):
@@ -28,8 +28,10 @@ def Main():
 
 	img = ImageFilter.SmoothGrey( img )
 	#img.show()
-	img, angImg = ImageFilter.SobelOperator(img)
+
+	( img, angImg ) = ImageFilter.SobelOperator(img)
 	img.show()
+	
 	#angImg.show()
 	img = ImageFilter.NonMaximumSuppression( img, angImg )
 	img.show( )

@@ -2,22 +2,24 @@ from PIL import Image
 import math as Math
 import numpy as NumPy
 
-S = 1.4
+S = 1
 K = 5
 
 redConst = 0.299
 greenConst = 0.587
 blueConst = 0.114
 
-HorizontalFilterKernel = [[1, 0, -1],
-                          [2, 0, -2],
-                          [1, 0, -1]
+
+HorizontalFilterKernel = [	[1, 0, -1],
+							[2, 0, -2],
+							[1, 0, -1]
 ]
 
-VerticalFilterKernel   = [[ 1,  2,  1],
-                          [ 0,  0,  0],
-                          [-1, -2, -1]
+VerticalFilterKernel   = [	[ 1,  2,  1],
+							[ 0,  0,  0],
+							[-1, -2, -1]
 ]
+
 
 def TransformToGrey(ImagePic):
 	ImagePic = ImagePic.convert('RGB')
@@ -88,6 +90,7 @@ def SmoothGrey(ImagePic):
 
 	return filteredImage
 
+
 def SobelOperator(ImagePic):
 	result = Image.new("L", (ImagePic.size[0], ImagePic.size[1]))
 	resultAng = Image.new( "L", (ImagePic.size[ 0 ], ImagePic.size[ 1 ]) )
@@ -101,9 +104,10 @@ def SobelOperator(ImagePic):
 			edgeGrad = Math.sqrt(horizontalPart ** 2 + verticalPart ** 2)
 
 			if edgeGrad != 0:
-				a = Math.atan2( verticalPart, horizontalPart )
-				angle = round( a / (Math.pi / 4) ) * (Math.pi / 4) - (
-							Math.pi / 2)
+
+				a = Math.atan2(horizontalPart, verticalPart)
+				
+				angle = round( a / (Math.pi / 4) ) * (Math.pi / 4) - ( Math.pi / 2 )
 			else:
 				angle = -1024
 			#print(str(x) + " : " + str(y))
@@ -115,13 +119,14 @@ def SobelOperator(ImagePic):
 
 
 def CheckCorrectIndex(ImagePic, x, y):
-	if 0 > x >= ImagePic.size[0] and 0 > y >= ImagePic.size[1]:
+	if 0 < x < ImagePic.size[0] and 0 < y < ImagePic.size[1]:
 		return 0
 	else:
 		return 1
 
 def Check(ImagePic, x, y, v):
-	if not CheckCorrectIndex(ImagePic, x, y) == 0:
+
+	if CheckCorrectIndex(ImagePic, x, y) != 0:
 		return 0
 	elif ImagePic.getpixel((x, y)) <= v:
 		return 1
@@ -134,7 +139,7 @@ def NonMaximumSuppression(ImagePic, ImageAng):
 	for y in range(ImagePic.size[ 1 ]):
 		for x in range(ImagePic.size[ 0 ]):
 
-			if ImageAng.getpixel((x, y)) ==  -1024:
+			if ImageAng.getpixel((x, y)) == -1024:
 				continue
 
 			dx = int(Math.copysign(1, Math.cos(ImageAng.getpixel((x, y)))))
@@ -145,6 +150,6 @@ def NonMaximumSuppression(ImagePic, ImageAng):
 
 			if Check(ImagePic, x - dx, y - dy, ImagePic.getpixel((x, y))) == 1:
 				result.putpixel((x - dx, y - dy), 0)
-			result.putpixel( (x, y),  ImagePic.getpixel((x, y)))
+			result.putpixel( (x, y), ImagePic.getpixel((x, y)))
 
 	return result
