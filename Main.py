@@ -4,6 +4,7 @@ from ImageFilter import CropImage
 # Parts dictionary (x, y): Image
 ImageParts = {}
 
+#todo: insert some preprocessing to reduce 
 
 def Main():
 	#image = Image.open("C:/Users/valer/Desktop/a.jpg", "r")
@@ -24,18 +25,10 @@ def Main():
 	#image.show()
 
 	img = ImageFilter.TransformToGrey(image)
-	#img.show()
-
 	img = ImageFilter.SmoothGrey( img )
-	#img.show()
-
 	( img, angImg ) = ImageFilter.SobelOperator(img)
-	img.show()
-	
-	#angImg.show()
 	img = ImageFilter.NonMaximumSuppression( img, angImg )
-	img.show( )
-
+	ImageFilter.DoubleThresholding(img, 0.4, 0.7)
 
 Main()
 
