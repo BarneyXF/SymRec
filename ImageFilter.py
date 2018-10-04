@@ -1,155 +1,146 @@
 from PIL import Image
 import math as Math
 import numpy as NumPy
+import Constants
 
-S = 1
-K = 5
-
-redConst = 0.299
-greenConst = 0.587
-blueConst = 0.114
+#TODO: Write docs.
 
 
-HorizontalFilterKernel = [	[1, 0, -1],
-							[2, 0, -2],
-							[1, 0, -1]
-]
+def TransformToGrey( Image ):
+	image = Image.convert( 'RGB' )
 
-VerticalFilterKernel   = [	[ 1,  2,  1],
-							[ 0,  0,  0],
-							[-1, -2, -1]
-]
+	resultImage = NumPy.asarray( [ [ 0 for x in range( image.size[ 0 ] ) ] for y in range( image.size[ 1 ] ) ])
 
+	( redLine, greenLine, blueLine ) = image.split( )
 
-def TransformToGrey(ImagePic):
-	ImagePic = ImagePic.convert('RGB')
+	redLine = NumPy.asarray( redLine )
+	greenLine = NumPy.asarray( greenLine )
+	blueLine = NumPy.asarray( blueLine )
 
-	result = NumPy.asarray([[0 for x in range(ImagePic.size[0])] for y in range(ImagePic.size[1])])
+	for y in range( image.size[ 0 ] ):
+		for x in range( image.size[ 1 ] ):
+			resultImage[ x ,y ] = round( redLine[ x, y ] * Constants.RedLineMultiplier ) + round( greenLine[ x, y ] * Constants.GreenLineMultiplier ) + round( blueLine[ x, y ] * Constants.BlueLineMultiplier )
 
-	red, green, blue = ImagePic.split()
-
-	red = NumPy.asarray(red)
-	green = NumPy.asarray(green)
-	blue = NumPy.asarray(blue)
-
-	for y in range(ImagePic.size[ 0 ]):
-		for x in range(ImagePic.size[ 1 ]):
-			result[x ,y] = round(red[x, y] * redConst) + round(green[x, y] * greenConst) + round(blue[x, y] * blueConst)
-
-	return Image.fromarray(result)
+	return Image.fromarray( resultImage )
 
 
-def CropImage(ImageToCrop, StartXPosition, StartYPosition, Width, Height):
-	imageWidth = ImageToCrop.size[0]
-	imageHeight = ImageToCrop.size[1]
+def CropImage( Image, StartXPosition, StartYPosition, WidthOfResult, HeightOfResult ):
+	( width, height ) = Image.size
 
-	if StartXPosition > imageWidth:
-		print("Width of slice to crop is greater that width of image")
+	if 0 > StartXPosition or StartXPosition > width:
+		print( " -- Предупреждение! Начальная точка(ширина) должна находиться в пределах изображения." )
+		print( "    (начальная точка будет установлена в 0)" )
+		StartXPosition = 0
+	elif 0 > WidthOfResult + StartXPosition > width:
+		print( " -- Предупреждение! Конечная точка(ширина) должна находиться в пределах изображения." )
+		print( "    (конечная точка будет установлена в значение ширины изображения)" )
+		WidthOfResult = width
+
+	if 0 <= StartYPosition > height:
+		print( " -- Предупреждение! Начальная точка(высота) должна находиться в пределах изображения." )
+		print( "    (высота будет установлена в 0)" )
 		return
-	elif Width + StartXPosition > imageWidth:
-		Width = imageWidth - StartXPosition
+	elif 0 <= HeightOfResult + StartYPosition > height:
+		print(" -- Предупреждение! Конечная точка(высота) должна находиться в пределах изображения.")
+		print("    (конечная точка будет установлена в значение высоты изображения)")
+		HeightOfResult = height
 
-	if StartYPosition > imageHeight:
-		print("Height of slice to crop is greater that height of image")
-		return
-	elif Height + StartYPosition > imageHeight:
-		Height = imageHeight - StartYPosition
-
-	sliceSize = (StartXPosition, StartYPosition, StartXPosition + Width, StartYPosition + Height)
-	return ImageToCrop.crop(sliceSize)
+	sliceSizes = ( StartXPosition, StartYPosition, StartXPosition + WidthOfResult, StartYPosition + HeightOfResult )
+	return Image.crop( sliceSizes )
 
 
-def GaussFunc(X, Y, Sigma):
-	return  (1 / (2 * Math.pi * Sigma ** 2)) * Math.exp(-((X ** 2) + (Y ** 2)) / (2 * Sigma ** 2))
+def GaussFunc( X, Y, Sigma ):
+	return ( 1 / ( 2 * Math.pi * Sigma ** 2 ) ) * Math.exp( -( ( X ** 2 ) + ( Y ** 2 ) ) / ( 2 * Sigma ** 2 ) )
 
 
-def GaussMask(Size, Sigma):
+def GaussMask( Size, Sigma ):
 	shift = Math.floor( Size / 2 )
 
-	mask = [[0 for x in range(Size)] for y in range(Size)]
+	mask = [ [ 0 for x in range( Size ) ] for y in range( Size ) ]
 
-	for y in range(Size):
-		for x in range(Size):
-			mask[y][x] = GaussFunc(x - shift, y - shift, Sigma)
+	for y in range( Size ):
+		for x in range( Size ):
+			mask[ y ][ x ] = GaussFunc( x - shift, y - shift, Sigma )
 
 	return mask
 
 
-def SmoothGrey(ImagePic):
-	filteredImage = ImagePic
-	mask = NumPy.array( GaussMask( K, S ) )
-	shift = Math.floor( K / 2 )
+def SmoothGrey( Image ):
+	resultImage = Image
+	mask = NumPy.array( GaussMask( Constants.GaussMaskSize, Constants.SigmaConst ) )
+	shift = Math.floor( Constants.GaussMaskSize / 2 )
 
-	for y in range( shift, ImagePic.size[ 1 ] - shift):
-		for x in range( shift, ImagePic.size[ 0 ] - shift):
-			partPixels = NumPy.asarray( CropImage( ImagePic, x - shift, y - shift, K, K ), "int32" )
+	for y in range( shift, Image.size[ 1 ] - shift ):
+		for x in range( shift, Image.size[ 0 ] - shift ):
+			imagePart = NumPy.asarray( CropImage(
+				Image, x - shift, y - shift, Constants.GaussMaskSize, Constants.GaussMaskSize ), "int32" )
 
-			partPixels = mask * partPixels
+			imagePart = mask * imagePart
 
-			filteredImage.putpixel( (x, y), int(partPixels.sum()))
+			resultImage.putpixel( ( x, y ), int( imagePart.sum( ) ) )
 
-	return filteredImage
+	return resultImage
 
 
-def SobelOperator(ImagePic):
-	result = Image.new("L", (ImagePic.size[0], ImagePic.size[1]))
-	resultAng = Image.new( "L", (ImagePic.size[ 0 ], ImagePic.size[ 1 ]) )
-	for x in range(1, ImagePic.size[ 0 ] - 1):
-		for y in range(1, ImagePic.size[ 1 ] - 1):
-			partPixels = NumPy.asarray( CropImage( ImagePic, x - 1, y - 1, 3, 3 ), "int32" )
+def SobelOperator( Image ):
+	result = Image.new( "L", ( Image.size[ 0 ], Image.size[ 1 ] ) )
+	resultAngles = Image.new("L", (Image.size[0], Image.size[1]))
+	
+	for x in range( 1, Image.size[ 0 ] - 1 ):
+		for y in range( 1, Image.size[ 1 ] - 1 ):
+			imagePart = NumPy.asarray( CropImage( Image, x - 1, y - 1, 3, 3 ), "int32" )
 
-			horizontalPart = (partPixels * HorizontalFilterKernel).sum()
-			verticalPart   = (partPixels * VerticalFilterKernel).sum()
+			horizontalPart = ( imagePart * Constants.HorizontalFilterKernel ).sum( )
+			verticalPart = ( imagePart * Constants.VerticalFilterKernel ).sum( )
 
-			edgeGrad = Math.sqrt(horizontalPart ** 2 + verticalPart ** 2)
+			edgeGrad = Math.sqrt( horizontalPart ** 2 + verticalPart ** 2 )
 
 			if edgeGrad != 0:
-
-				a = Math.atan2(horizontalPart, verticalPart)
-				
-				angle = round( a / (Math.pi / 4) ) * (Math.pi / 4) - ( Math.pi / 2 )
+				a = Math.atan2( horizontalPart, verticalPart )
+				angle = round( a / ( Math.pi / 4 ) ) * ( Math.pi / 4 ) - ( Math.pi / 2 )
 			else:
-				angle = -1024
-			#print(str(x) + " : " + str(y))
+				angle = Constants.WrongValue
 
-			result.putpixel( (x, y), int(edgeGrad) )
-			resultAng.putpixel( (x, y), int(angle) )
+			result.putpixel( ( x, y ), int( edgeGrad ) )
+			resultAngles.putpixel( ( x, y ), int( angle ) )
 
-	return result, resultAng
+	return result, resultAngles
 
 
-def CheckCorrectIndex(ImagePic, x, y):
-	if 0 < x < ImagePic.size[0] and 0 < y < ImagePic.size[1]:
+def CheckCorrectIndex( Image, X, Y ):
+	if 0 < X < Image.size[ 0 ] and 0 < Y < Image.size[ 1 ]:
 		return 0
 	else:
 		return 1
 
-def Check(ImagePic, x, y, v):
 
-	if CheckCorrectIndex(ImagePic, x, y) != 0:
+def Check( Image, X, Y, OriginPixel ):
+
+	if CheckCorrectIndex( Image, X, Y ) != 0:
 		return 0
-	elif ImagePic.getpixel((x, y)) <= v:
+	elif Image.getpixel( ( X, Y ) ) <= OriginPixel:
 		return 1
 	else:
 		return 0
 
-def NonMaximumSuppression(ImagePic, ImageAng):
-	result = ImagePic
 
-	for y in range(ImagePic.size[ 1 ]):
-		for x in range(ImagePic.size[ 0 ]):
+def NonMaximumSuppression( Image, ImageAng ):
+	result = Image
 
-			if ImageAng.getpixel((x, y)) == -1024:
+	for y in range( Image.size[ 1 ]) :
+		for x in range( Image.size[ 0 ] ):
+
+			if ImageAng.getpixel( ( x, y ) ) == Constants.WrongValue:
 				continue
 
-			dx = int(Math.copysign(1, Math.cos(ImageAng.getpixel((x, y)))))
-			dy = int(Math.copysign(1, Math.sin(ImageAng.getpixel((x, y)))))
+			dx = int( Math.copysign( 1, Math.cos( ImageAng.getpixel( ( x, y ) ) ) ) )
+			dy = int( Math.copysign( 1, Math.sin( ImageAng.getpixel( ( x, y ) ) ) ) )
 
-			if Check(ImagePic, x + dx, y + dy, ImagePic.getpixel((x, y))) == 1:
-				result.putpixel((x + dx, y + dy), 0)
+			if Check( Image, x + dx, y + dy, Image.getpixel( ( x, y ) ) ) == 1:
+				result.putpixel( ( x + dx, y + dy ), 0 ) 
 
-			if Check(ImagePic, x - dx, y - dy, ImagePic.getpixel((x, y))) == 1:
-				result.putpixel((x - dx, y - dy), 0)
-			result.putpixel( (x, y), ImagePic.getpixel((x, y)))
+			if Check( Image, x - dx, y - dy, Image.getpixel( ( x, y ) ) ) == 1:
+				result.putpixel( ( x - dx, y - dy ), 0 )
+			result.putpixel( ( x, y ), Image.getpixel( ( x, y ) ) )
 
 	return result
