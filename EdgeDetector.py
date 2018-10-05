@@ -2,6 +2,7 @@ from PIL import Image
 import math as Math
 import numpy as NumPy
 import Constants
+import timeit as Timer
 
 # TODO: Write docs.
 
@@ -171,5 +172,37 @@ def DoubleThresholding(ImageArg, LowerBound, HigherBound):
 				resultImage.putpixel((x, y), Constants.MinColorValue)
 			else:
 				resultImage.putpixel((x, y), Constants.MidColorValue)
+
+	return resultImage
+
+
+def BlobAnalysis(ImageArg, MaxValue, MinValue):
+
+	resultImage = Image.new("L", (ImageArg.size[0], ImageArg.size[1]))
+
+	for y in range(ImageArg.size[1]):
+		for x in range(ImageArg.size[0]):
+			if ImageArg.getpixel( ( x, y ) ) == MaxValue:
+				resultImage.putpixel((x, y), MaxValue)
+
+				for k in range(8):
+					dx = Constants.LineDirection[0][k]
+					dy = Constants.LineDirection[1][k]
+
+					X = x
+					Y = y
+
+					while True:
+						X = X + dx
+						Y = Y + dy
+
+						if X < 0 or Y < 0 or X > ImageArg.size[0] or Y > ImageArg.size[1]:
+							break
+						if ImageArg.getpixel((X, Y)) == MinValue or ImageArg.getpixel((X, Y)) == MaxValue:
+							break
+
+						resultImage.putpixel((X, Y), MaxValue)
+			else:
+				resultImage.putpixel((x, y), MinValue)
 
 	return resultImage

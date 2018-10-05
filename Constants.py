@@ -1,9 +1,14 @@
-SigmaConst = 1.5
+FilePath = "C:/Users/valer/Desktop/valve.png"
+
+SigmaConst = 1.4
 GaussMaskSize = 5
 
-RedLineMultiplier = 0.299
-GreenLineMultiplier = 0.587
-BlueLineMultiplier = 0.114
+LowerBound = 0.57
+HigherBound = 0.6
+
+RedLineMultiplier = 0.3
+GreenLineMultiplier = 0.6
+BlueLineMultiplier = 0.1
 
 WrongValue = -255
 
@@ -16,7 +21,11 @@ HorizontalFilterKernel = [	[1, 0, -1],
 							[1, 0, -1]
 ]
 
-VerticalFilterKernel = [	[ 1,  2,  1],
-							[ 0,  0,  0],
+VerticalFilterKernel = [	[1,  2,  1],
+							[0,  0,  0],
 							[-1, -2, -1]
+]
+
+LineDirection = [	[-1, -1, -1,  0, 0,  1, 1, 1],
+					[-1,  0,  1, -1, 1, -1, 0, 1]
 ]
