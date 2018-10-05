@@ -1,9 +1,11 @@
 FilePath = "C:/Users/valer/Desktop/valve.png"
 
-SigmaConst = 1.4
+SliceSize = 100
+
+SigmaConst = 0.35
 GaussMaskSize = 5
 
-LowerBound = 0.57
+LowerBound = 0.599
 HigherBound = 0.6
 
 RedLineMultiplier = 0.3

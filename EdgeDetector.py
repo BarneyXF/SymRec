@@ -58,8 +58,17 @@ def CropImage(ImageArg, StartXPosition, StartYPosition, WidthOfResult, HeightOfR
 	return ImageArg.crop(sliceSizes)
 
 
+def SpliceImage(ImagePartsArray, Size):
+	resultImage = Image.new("L", Size)
+
+	for (X, Y), part in ImagePartsArray.items():
+		resultImage.paste(part, (X * Constants.SliceSize, Y * Constants.SliceSize))
+
+	return resultImage
+
+
 def GaussFunc(X, Y, Sigma):
-	return (1 / (2 * Math.pi * Sigma ** 2)) * Math.exp(-((X ** 2) + (Y ** 2)) / (2 * Sigma ** 2))
+	return (1 / (2 * Math.pi * Sigma * Sigma)) * Math.exp(-((X * X) + (Y * Y)) / (2 * Sigma * Sigma))
 
 
 def GaussMask(Size, Sigma):
@@ -105,7 +114,7 @@ def SobelOperator(ImageArg):
 				imagePart * Constants.HorizontalFilterKernel).sum()
 			verticalPart = (imagePart * Constants.VerticalFilterKernel).sum()
 
-			edgeGrad = Math.sqrt(horizontalPart ** 2 + verticalPart ** 2)
+			edgeGrad = Math.sqrt(horizontalPart * horizontalPart + verticalPart * verticalPart)
 
 			if edgeGrad != 0:
 				a = Math.atan2(horizontalPart, verticalPart)
@@ -206,3 +215,15 @@ def BlobAnalysis(ImageArg, MaxValue, MinValue):
 				resultImage.putpixel((x, y), MinValue)
 
 	return resultImage
+
+
+def EdgeDetector(ImageArg):
+	img = TransformToGrey(ImageArg)
+	img = SmoothGrey(img)
+	(img, angImg) = SobelOperator(img)
+	img = NonMaximumSuppression(img, angImg)
+	img = DoubleThresholding(
+		img, Constants.LowerBound, Constants.HigherBound)
+	img = BlobAnalysis(
+		img, Constants.MaxColorValue, Constants.MinColorValue)
+	return img
